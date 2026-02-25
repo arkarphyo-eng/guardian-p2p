@@ -9,22 +9,26 @@
     
     <style>
         :root { --gold: #D4AF37; --dark: #0a0a0a; --card: #161616; --safe: #2ecc71; --danger: #e74c3c; --admin: #8e44ad; }
-        body { background: var(--dark); color: white; font-family: sans-serif; margin: 0; padding-bottom: 50px; display: flex; flex-direction: column; align-items: center; }
+        body { background: var(--dark); color: white; font-family: sans-serif; margin: 0; padding-bottom: 80px; display: flex; flex-direction: column; align-items: center; }
         header { width: 100%; padding: 15px; text-align: center; background: #000; border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 100; }
         .container { width: 92%; max-width: 450px; margin-top: 15px; }
         .card { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; }
+        
+        /* Live မီးစိမ်း Animation */
+        .live-indicator { display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--safe); margin-bottom: 10px; }
+        .dot { height: 8px; width: 8px; background-color: var(--safe); border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 8px var(--safe); animation: blink 1.5s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
         .price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .price-box { text-align: center; padding: 10px; border-radius: 8px; }
-        .buy { background: rgba(46, 204, 113, 0.1); border: 1px solid var(--safe); color: var(--safe); }
-        .sell { background: rgba(231, 76, 60, 0.1); border: 1px solid var(--danger); color: var(--danger); }
+        .price-box { text-align: center; padding: 10px; border-radius: 8px; border: 1px solid #333; }
+        .buy { color: var(--safe); border-color: var(--safe); }
+        .sell { color: var(--danger); border-color: var(--danger); }
         .price-val { font-size: 24px; font-weight: bold; display: block; }
         input { width: 90%; padding: 12px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #333; background: #000; color: white; }
         button { background: var(--gold); color: black; padding: 12px; border: none; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; }
-        .admin-only { display: none; background: #1a1020; padding: 15px; border-radius: 12px; border: 1px solid var(--admin); margin-top: 20px; }
-        .request-item { background: #000; padding: 10px; border-radius: 6px; margin-bottom: 10px; border-left: 4px solid var(--gold); font-size: 12px; }
-        .btn-group { display: flex; gap: 5px; margin-top: 10px; }
-        .btn-approve { background: var(--safe); color: white; padding: 5px; font-size: 10px; }
-        .btn-cancel { background: var(--danger); color: white; padding: 5px; font-size: 10px; }
+        .hidden { display: none; }
+        .daily-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; text-align: center; font-size: 11px; margin-top: 10px; }
+        .status-badge { padding: 2px 8px; border-radius: 10px; font-size: 10px; }
     </style>
 </head>
 <body>
@@ -34,60 +38,86 @@
 </header>
 
 <div class="container">
-    <div class="card">
-        <h4 style="margin:0; font-size:12px; color:var(--gold); text-align:center;">LIVE MARKET RATE</h4>
-        <div class="price-grid">
-            <div class="price-box buy">
-                <span style="font-size:10px;">BUY (အဝယ်)</span>
-                <span id="buy-rate" class="price-val">0</span>
+    <div class="live-indicator"><span class="dot"></span> SERVER LIVE CONNECTED</div>
+
+    <div id="auth-section">
+        <div class="card" id="login-box">
+            <h4 style="color:var(--gold);">LOGIN</h4>
+            <input type="text" id="l-phone" placeholder="Phone or Email">
+            <input type="password" id="l-pass" placeholder="6-Digit Password">
+            <button onclick="handleLogin()">LOGIN</button>
+            <p style="font-size:11px; text-align:center;" onclick="toggleAuth(true)">New here? <span style="color:var(--gold);">Sign Up</span></p>
+        </div>
+
+        <div class="card hidden" id="signup-box">
+            <h4 style="color:var(--gold);">SIGN UP</h4>
+            <input type="text" id="s-phone" placeholder="Phone (09...)">
+            <input type="text" id="s-nick" placeholder="Nickname">
+            <input type="password" id="s-pass" placeholder="6-Digit Password" maxlength="6">
+            <button onclick="handleSignup()">CREATE ACCOUNT</button>
+            <p style="font-size:11px; text-align:center;" onclick="toggleAuth(false)">Back to <span style="color:var(--gold);">Login</span></p>
+        </div>
+    </div>
+
+    <div id="main-content" class="hidden">
+        <div id="admin-panel" class="hidden" style="border: 2px solid var(--admin); padding: 15px; background: #1a1020; border-radius: 12px; margin-bottom:15px;">
+            <h4 style="color:var(--admin); margin-top:0;">ADMIN CONTROL PANEL</h4>
+            <input type="number" id="adm-buy" placeholder="New Buy Rate">
+            <input type="number" id="adm-sell" placeholder="New Sell Rate">
+            <button onclick="updateMarket()" style="background:var(--admin); color:white;">UPDATE MARKET</button>
+            <div id="admin-req-list" style="margin-top:10px;"></div>
+        </div>
+
+        <div class="card" style="border-left: 4px solid var(--gold);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h3 id="user-name" style="margin:0;">User</h3>
+                    <span id="user-status" class="status-badge" style="background:#333;">Free User</span>
+                </div>
+                <button onclick="logout()" style="width:auto; padding:5px 10px; font-size:10px; background:#222; color:white;">Logout</button>
             </div>
-            <div class="price-box sell">
-                <span style="font-size:10px;">SELL (အရောင်း)</span>
-                <span id="sell-rate" class="price-val">0</span>
+        </div>
+
+        <div class="card">
+            <h4 style="margin:0; font-size:11px; color:var(--gold); text-align:center;">LIVE MARKET RATE</h4>
+            <div class="price-grid">
+                <div class="price-box buy">
+                    <span style="font-size:9px;">BUY (အဝယ်)</span>
+                    <span id="buy-rate" class="price-val">0</span>
+                </div>
+                <div class="price-box sell">
+                    <span style="font-size:9px;">SELL (အရောင်း)</span>
+                    <span id="sell-rate" class="price-val">0</span>
+                </div>
+            </div>
+            <div class="daily-grid">
+                <div class="card" style="padding:5px; margin:0;">10 AM<br><b id="rec-10am">--</b></div>
+                <div class="card" style="padding:5px; margin:0;">1 PM<br><b id="rec-1pm">--</b></div>
+                <div class="card" style="padding:5px; margin:0;">5 PM<br><b id="rec-5pm">--</b></div>
+            </div>
+            <div id="price-time" style="text-align:center; font-size:9px; color:#444; margin-top:5px;">Update: --:--</div>
+        </div>
+
+        <div id="premium-tools" class="hidden">
+            <div class="card">
+                <h4 style="color:var(--danger);">SCAM CHECKER</h4>
+                <input type="text" id="scam-key" placeholder="Phone or Bank Account No.">
+                <button onclick="checkScam()">CHECK NOW</button>
+                <div id="scam-result" style="margin-top:10px; padding:10px; border-radius:8px; display:none; font-size:12px;"></div>
+            </div>
+            <div class="card">
+                <h4>REPORT SCAM</h4>
+                <input type="text" id="report-target" placeholder="Phone/Bank No. to report">
+                <input type="text" id="report-detail" placeholder="Detail (e.g. Third Party)">
+                <button onclick="submitReport()" style="background:var(--danger); color:white;">SUBMIT REPORT</button>
             </div>
         </div>
-        <div id="price-time" style="text-align:center; font-size:10px; color:#444; margin-top:10px;">Update: --:--</div>
-    </div>
 
-    <div id="activation-card" class="card">
-        <h4 style="color:var(--gold);">PREMIUM ACCESS 🔒</h4>
-        <p style="font-size:11px; color:#777;">ငွေလွှဲပြီးလျှင် Merchant ID နှင့် Transaction ID ပေးပို့ပါ။</p>
-        <div style="font-size:12px; background:#000; padding:10px; margin-bottom:10px; border:1px solid #333;">
-            KPay: <b id="display-kpay" style="color:var(--gold);">09-xxxxxxxxx</b><br>
-            Wave: <b id="display-wave" style="color:var(--gold);">09-xxxxxxxxx</b>
-        </div>
-        <input type="text" id="pay-mid" placeholder="Phone Number (Login ID)">
-        <input type="password" id="pay-pass" placeholder="Set 6-Digit Password" maxlength="6">
-        <input type="text" id="pay-tx" placeholder="Transaction Last 6 digits">
-        <button onclick="requestAccess()">SEND PAYMENT PROOF</button>
-    </div>
-
-    <div id="login-section" class="card">
-        <h4 style="color:var(--gold);">LOGIN</h4>
-        <input type="text" id="login-phone" placeholder="Phone Number">
-        <input type="password" id="login-pass" placeholder="6-Digit Password" maxlength="6">
-        <button onclick="userLogin()">LOGIN TO SYSTEM</button>
-    </div>
-
-    <div id="admin-panel" class="admin-only">
-        <h4 style="color:var(--admin);">ADMIN DASHBOARD</h4>
-        <div class="card">
-            <h5>Set Market Rates</h5>
-            <input type="number" id="m-buy" placeholder="Buy Rate">
-            <input type="number" id="m-sell" placeholder="Sell Rate">
-            <button onclick="updateRates()" style="background:var(--admin); color:white;">UPDATE RATES</button>
-        </div>
-        
-        <div class="card">
-            <h5>Pending Approvals</h5>
-            <div id="pending-requests"></div>
-        </div>
-
-        <div class="card">
-            <h5>Payment Settings</h5>
-            <input type="text" id="new-kpay" placeholder="New KPay">
-            <input type="text" id="new-wave" placeholder="New Wave">
-            <button onclick="updatePhones()" style="background:var(--admin); color:white;">UPDATE PHONES</button>
+        <div id="payment-box" class="card">
+            <h4 style="color:var(--gold);">UPGRADE TO PREMIUM 🔒</h4>
+            <div style="font-size:12px; margin-bottom:10px;">KPay/Wave: <b id="display-payno">Loading...</b></div>
+            <input type="text" id="tx-id" placeholder="Transaction Last 6 digits">
+            <button onclick="sendProof()">SUBMIT PAYMENT PROOF</button>
         </div>
     </div>
 </div>
@@ -105,8 +135,74 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    let currentPhone = localStorage.getItem('user_ph');
 
-    // Rates Sync
+    function toggleAuth(showSignup) {
+        document.getElementById('login-box').classList.toggle('hidden', showSignup);
+        document.getElementById('signup-box').classList.toggle('hidden', !showSignup);
+    }
+
+    function handleSignup() {
+        const ph = document.getElementById('s-phone').value;
+        const nk = document.getElementById('s-nick').value;
+        const ps = document.getElementById('s-pass').value;
+        if(ph.startsWith('09') && ps.length == 6 && nk) {
+            db.ref('users/' + ph).set({ nick: nk, pass: ps, active: false }).then(() => {
+                alert("Account created! Please Login.");
+                toggleAuth(false);
+            });
+        } else { alert("Please fill all correctly (Pass: 6 digits)"); }
+    }
+
+    function handleLogin() {
+        const ph = document.getElementById('l-phone').value;
+        const ps = document.getElementById('l-pass').value;
+
+        // Admin Login Condition
+        if(ph === "admin@gmail.com" && ps === "151015") {
+            if(prompt("Admin Secret Code:") === "151015") {
+                localStorage.setItem('user_ph', 'admin_account');
+                location.reload();
+                return;
+            }
+        }
+
+        db.ref('users/' + ph).once('value', snap => {
+            const u = snap.val();
+            if(u && u.pass === ps) {
+                localStorage.setItem('user_ph', ph);
+                location.reload();
+            } else { alert("Invalid login!"); }
+        });
+    }
+
+    if(currentPhone) {
+        document.getElementById('auth-section').classList.add('hidden');
+        document.getElementById('main-content').classList.remove('hidden');
+        
+        if(currentPhone === 'admin_account') {
+            document.getElementById('admin-panel').classList.remove('hidden');
+            document.getElementById('user-name').innerText = "SYSTEM ADMIN";
+            document.getElementById('user-status').innerText = "Root Access";
+            document.getElementById('premium-tools').classList.remove('hidden');
+            document.getElementById('payment-box').classList.add('hidden');
+            loadAdminData();
+        } else {
+            db.ref('users/' + currentPhone).on('value', snap => {
+                const u = snap.val();
+                if(u) {
+                    document.getElementById('user-name').innerText = u.nick;
+                    if(u.active) {
+                        document.getElementById('user-status').innerText = "Premium Member";
+                        document.getElementById('user-status').style.background = "var(--gold)";
+                        document.getElementById('premium-tools').classList.remove('hidden');
+                        document.getElementById('payment-box').classList.add('hidden');
+                    }
+                }
+            });
+        }
+    }
+
     db.ref('market_rates/').on('value', snap => {
         const d = snap.val() || {buy: 0, sell: 0, time: '--'};
         document.getElementById('buy-rate').innerText = parseInt(d.buy).toLocaleString();
@@ -114,86 +210,74 @@
         document.getElementById('price-time').innerText = "Update: " + d.time;
     });
 
-    // Payment Info Sync
-    db.ref('settings/').on('value', snap => {
-        const v = snap.val() || {};
-        if(v.kpay) document.getElementById('display-kpay').innerText = v.kpay;
-        if(v.wave) document.getElementById('display-wave').innerText = v.wave;
+    const today = new Date().toISOString().split('T')[0];
+    db.ref('daily_records/' + today).on('value', snap => {
+        const d = snap.val() || {};
+        document.getElementById('rec-10am').innerText = d.t10 || "--";
+        document.getElementById('rec-1pm').innerText = d.t13 || "--";
+        document.getElementById('rec-5pm').innerText = d.t17 || "--";
     });
 
-    function requestAccess() {
-        const ph = document.getElementById('pay-mid').value;
-        const ps = document.getElementById('pay-pass').value;
-        const tx = document.getElementById('pay-tx').value;
-        if(ph && ps.length == 6 && tx) {
-            db.ref('requests/' + ph).set({ pass: ps, tx: tx, status: 'pending' });
-            alert("Payment Proof တင်ပြပြီးပါပြီ။ Admin အတည်ပြုချက် စောင့်ပါ။");
-        } else { alert("အချက်အလက် အပြည့်အစုံ ထည့်ပါ။"); }
-    }
-
-    function userLogin() {
-        const ph = document.getElementById('login-phone').value;
-        const ps = document.getElementById('login-pass').value;
-
-        // Admin Login
-        if(ph === "admin@gmail.com" && ps === "151015") {
-            const code = prompt("Enter 6-Digit Admin Code:");
-            if(code === "151015") {
-                document.getElementById('admin-panel').style.display = 'block';
-                loadRequests();
-                return;
+    function checkScam() {
+        const key = document.getElementById('scam-key').value;
+        const res = document.getElementById('scam-result');
+        res.style.display = 'block'; res.style.background = "#111";
+        db.ref('scams/' + key).once('value', snap => {
+            const found = snap.val();
+            if(found) {
+                res.innerHTML = `<b style="color:var(--danger);">✖ SCAMMER DETECTED</b><br>Detail: ${found.detail}`;
+                res.style.border = "1px solid var(--danger)";
+            } else {
+                res.innerHTML = `<b style="color:var(--safe);">✔ CLEAR / NOT FOUND</b><br>Safe to trade.`;
+                res.style.border = "1px solid var(--safe)";
             }
-        }
-
-        // User Login
-        db.ref('users/' + ph).once('value', snap => {
-            const u = snap.val();
-            if(u && u.pass === ps && u.active) { alert("Welcome to Premium!"); }
-            else { alert("အကောင့်မရှိပါ သို့မဟုတ် Activate မဖြစ်သေးပါ။"); }
         });
     }
 
-    function updateRates() {
-        const b = document.getElementById('m-buy').value;
-        const s = document.getElementById('m-sell').value;
-        if(b && s) {
-            db.ref('market_rates/').set({ buy: b, sell: s, time: new Date().toLocaleTimeString() });
-            alert("Rates Updated!");
+    function submitReport() {
+        const t = document.getElementById('report-target').value;
+        const d = document.getElementById('report-detail').value;
+        if(t && d) {
+            db.ref('scams/' + t).set({ detail: d, by: currentPhone });
+            alert("Report submitted.");
         }
     }
 
-    function loadRequests() {
+    function updateMarket() {
+        const b = document.getElementById('adm-buy').value;
+        const s = document.getElementById('adm-sell').value;
+        const hr = new Date().getHours();
+        if(b && s) {
+            db.ref('market_rates/').set({ buy: b, sell: s, time: new Date().toLocaleTimeString() });
+            let key = hr < 12 ? 't10' : (hr < 15 ? 't13' : 't17');
+            db.ref('daily_records/' + today).update({ [key]: b });
+            alert("Market Rates Updated!");
+        }
+    }
+
+    function loadAdminData() {
         db.ref('requests/').on('value', snap => {
-            const container = document.getElementById('pending-requests');
-            container.innerHTML = "";
-            snap.forEach(child => {
-                if(child.val().status === 'pending') {
-                    container.innerHTML += `
-                        <div class="request-item">
-                            ID: ${child.key} | TX: ${child.val().tx}
-                            <div class="btn-group">
-                                <button class="btn-approve" onclick="action('${child.key}', 'approve', '${child.val().pass}')">APPROVE</button>
-                                <button class="btn-cancel" onclick="action('${child.key}', 'cancel')">CANCEL</button>
-                            </div>
-                        </div>`;
-                }
+            const list = document.getElementById('admin-req-list');
+            list.innerHTML = "<h5>Pending Access</h5>";
+            snap.forEach(c => {
+                list.innerHTML += `<div class='card' style='font-size:11px; margin-bottom:5px;'>ID: ${c.key} | TX: ${c.val().tx} 
+                <button onclick="approve('${c.key}')" style='background:var(--safe); width:auto; padding:2px 8px; margin-left:10px;'>Approve</button></div>`;
             });
         });
     }
 
-    function action(id, type, pass) {
-        if(type === 'approve') {
-            db.ref('users/' + id).set({ pass: pass, active: true });
-            db.ref('requests/' + id).remove();
-        } else { db.ref('requests/' + id).remove(); }
+    function approve(id) { db.ref('users/' + id).update({ active: true }); db.ref('requests/' + id).remove(); }
+    function logout() { localStorage.clear(); location.reload(); }
+    function sendProof() {
+        const tx = document.getElementById('tx-id').value;
+        if(tx && currentPhone) { db.ref('requests/' + currentPhone).set({ tx: tx }); alert("Proof sent!"); }
     }
-
-    function updatePhones() {
-        const k = document.getElementById('new-kpay').value;
-        const w = document.getElementById('new-wave').value;
-        if(k) db.ref('settings/kpay').set(k);
-        if(w) db.ref('settings/wave').set(w);
-    }
+    
+    db.ref('settings/').on('value', s => { 
+        const v = s.val(); 
+        document.getElementById('display-payno').innerText = v ? `KPay: ${v.kpay} / Wave: ${v.wave}` : "09-xxxxxxxxx"; 
+    });
 </script>
 </body>
-</html>
+    </html>
+    
