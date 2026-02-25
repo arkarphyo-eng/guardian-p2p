@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guardian P2P - Ultimate Live</title>
+    <title>Guardian P2P - Ultimate</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
@@ -13,27 +13,17 @@
         header { width: 100%; padding: 15px; text-align: center; background: #000; border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 100; }
         .container { width: 92%; max-width: 450px; margin-top: 15px; }
         .card { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; }
-        
-        /* ဈေးနှုန်း လှုပ်ခတ်မှု Animation */
-        @keyframes priceBlink {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; transform: scale(1.02); }
-            100% { opacity: 1; }
-        }
-
         .price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .price-box { text-align: center; padding: 12px; border-radius: 8px; border: 1px solid #333; transition: 0.3s; }
-        
-        /* Admin သတ်မှတ်ထားတဲ့အတိုင်း အရောင်နဲ့ လှုပ်ခတ်မှု */
-        .buy { color: var(--safe); border-color: var(--safe); animation: priceBlink 2s infinite ease-in-out; }
-        .sell { color: var(--danger); border-color: var(--danger); animation: priceBlink 2.5s infinite ease-in-out; }
-        
-        .price-val { font-size: 26px; font-weight: bold; display: block; letter-spacing: 1px; }
+        .price-box { text-align: center; padding: 10px; border-radius: 8px; border: 1px solid #333; }
+        .buy { color: var(--safe); border-color: var(--safe); }
+        .sell { color: var(--danger); border-color: var(--danger); }
+        .price-val { font-size: 24px; font-weight: bold; display: block; }
         input { width: 90%; padding: 12px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #333; background: #000; color: white; }
         button { background: var(--gold); color: black; padding: 12px; border: none; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; }
         .hidden { display: none; }
         .daily-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; text-align: center; font-size: 11px; margin-top: 10px; }
         .status-badge { padding: 2px 8px; border-radius: 10px; font-size: 10px; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid var(--gold); }
     </style>
 </head>
 <body>
@@ -49,7 +39,7 @@
             <input type="text" id="l-phone" placeholder="Phone (09...)">
             <input type="password" id="l-pass" placeholder="6-Digit Password">
             <button onclick="handleLogin()">LOGIN</button>
-            <p style="font-size:11px; text-align:center; cursor:pointer;" onclick="toggleAuth(true)">New here? <span style="color:var(--gold);">Sign Up</span></p>
+            <p style="font-size:11px; text-align:center;" onclick="toggleAuth(true)">New here? <span style="color:var(--gold);">Sign Up</span></p>
         </div>
 
         <div class="card hidden" id="signup-box">
@@ -58,7 +48,7 @@
             <input type="text" id="s-nick" placeholder="Nickname">
             <input type="password" id="s-pass" placeholder="6-Digit Password" maxlength="6">
             <button onclick="handleSignup()">CREATE ACCOUNT</button>
-            <p style="font-size:11px; text-align:center; cursor:pointer;" onclick="toggleAuth(false)">Back to <span style="color:var(--gold);">Login</span></p>
+            <p style="font-size:11px; text-align:center;" onclick="toggleAuth(false)">Back to <span style="color:var(--gold);">Login</span></p>
         </div>
     </div>
 
@@ -74,7 +64,7 @@
         </div>
 
         <div class="card">
-            <h4 style="margin:0; font-size:11px; color:var(--gold); text-align:center;">LIVE MARKET RATE (P2P)</h4>
+            <h4 style="margin:0; font-size:11px; color:var(--gold); text-align:center;">LIVE MARKET RATE</h4>
             <div class="price-grid">
                 <div class="price-box buy">
                     <span style="font-size:9px;">BUY (အဝယ်)</span>
@@ -86,11 +76,11 @@
                 </div>
             </div>
             <div class="daily-grid">
-                <div class="card" style="padding:5px; margin:0;">10 AM<br><b id="rec-10am" style="color:var(--gold);">--</b></div>
-                <div class="card" style="padding:5px; margin:0;">1 PM<br><b id="rec-1pm" style="color:var(--gold);">--</b></div>
-                <div class="card" style="padding:5px; margin:0;">5 PM<br><b id="rec-5pm" style="color:var(--gold);">--</b></div>
+                <div class="card" style="padding:5px; margin:0;">10 AM<br><b id="rec-10am">--</b></div>
+                <div class="card" style="padding:5px; margin:0;">1 PM<br><b id="rec-1pm">--</b></div>
+                <div class="card" style="padding:5px; margin:0;">5 PM<br><b id="rec-5pm">--</b></div>
             </div>
-            <div id="price-time" style="text-align:center; font-size:9px; color:#444; margin-top:8px;">Update: --:--</div>
+            <div id="price-time" style="text-align:center; font-size:9px; color:#444; margin-top:5px;">Update: --:--</div>
         </div>
 
         <div id="premium-tools" class="hidden">
@@ -110,26 +100,19 @@
 
         <div id="payment-box" class="card">
             <h4 style="color:var(--gold);">UPGRADE TO PREMIUM 🔒</h4>
-            <div style="font-size:12px; margin-bottom:10px; background:#000; padding:10px; border:1px solid #333;">
-                <span id="display-payno">Loading...</span>
-            </div>
+            <div style="font-size:12px; margin-bottom:10px;">KPay/Wave: <b id="display-payno">Loading...</b></div>
             <input type="text" id="tx-id" placeholder="Transaction Last 6 digits">
             <button onclick="sendProof()">SUBMIT PAYMENT PROOF</button>
         </div>
     </div>
 
-    <div id="admin-panel" class="hidden admin-only" style="border: 2px solid var(--admin); padding: 15px; background: #1a1020; border-radius: 12px; margin-top: 20px;">
-        <h4 style="color:var(--admin); text-align:center;">ADMIN CONTROL</h4>
+    <div id="admin-panel" class="hidden admin-only" style="border: 1px solid var(--admin); padding: 15px; background: #1a1020; border-radius: 12px;">
+        <h4 style="color:var(--admin);">ADMIN CONTROL</h4>
         <input type="number" id="adm-buy" placeholder="New Buy Rate">
         <input type="number" id="adm-sell" placeholder="New Sell Rate">
         <button onclick="updateMarket()" style="background:var(--admin); color:white;">UPDATE MARKET</button>
         <hr style="border:0.5px solid #333; margin:15px 0;">
         <div id="admin-req-list"></div>
-        <hr style="border:0.5px solid #333; margin:15px 0;">
-        <h5>Set Payment Info</h5>
-        <input type="text" id="new-kpay" placeholder="New KPay">
-        <input type="text" id="new-wave" placeholder="New Wave">
-        <button onclick="updatePhones()" style="background:var(--admin); color:white;">Update Numbers</button>
     </div>
 </div>
 
@@ -148,6 +131,7 @@
     const db = firebase.database();
     let currentPhone = localStorage.getItem('user_ph');
 
+    // 1. Auth Logic
     function toggleAuth(showSignup) {
         document.getElementById('login-box').classList.toggle('hidden', showSignup);
         document.getElementById('signup-box').classList.toggle('hidden', !showSignup);
@@ -162,28 +146,35 @@
                 alert("Account created! Please Login.");
                 toggleAuth(false);
             });
-        } else { alert("Error: Use 09 phone and 6-digit password!"); }
+        } else { alert("Please fill all correctly (Pass: 6 digits)"); }
     }
 
     function handleLogin() {
         const ph = document.getElementById('l-phone').value;
         const ps = document.getElementById('l-pass').value;
+
         if(ph === "admin@gmail.com" && ps === "151015") {
-            if(prompt("Admin Secret Code:") === "151015") {
+            if(prompt("Admin Code:") === "151015") {
                 document.getElementById('admin-panel').classList.remove('hidden');
-                loadAdminData(); return;
+                loadAdminData();
+                return;
             }
         }
+
         db.ref('users/' + ph).once('value', snap => {
             const u = snap.val();
-            if(u && u.pass === ps) { localStorage.setItem('user_ph', ph); location.reload(); }
-            else { alert("Login failed!"); }
+            if(u && u.pass === ps) {
+                localStorage.setItem('user_ph', ph);
+                location.reload();
+            } else { alert("Invalid login!"); }
         });
     }
 
+    // 2. App Logic
     if(currentPhone) {
         document.getElementById('auth-section').classList.add('hidden');
         document.getElementById('main-content').classList.remove('hidden');
+        
         db.ref('users/' + currentPhone).on('value', snap => {
             const u = snap.val();
             document.getElementById('user-name').innerText = u.nick;
@@ -196,6 +187,7 @@
         });
     }
 
+    // 3. Market Rates Sync
     db.ref('market_rates/').on('value', snap => {
         const d = snap.val() || {buy: 0, sell: 0, time: '--'};
         document.getElementById('buy-rate').innerText = parseInt(d.buy).toLocaleString();
@@ -211,18 +203,19 @@
         document.getElementById('rec-5pm').innerText = d.t17 || "--";
     });
 
+    // 4. Scam Check Logic
     function checkScam() {
         const key = document.getElementById('scam-key').value;
         const res = document.getElementById('scam-result');
-        res.style.display = 'block';
+        res.style.display = 'block'; res.style.background = "#111";
         db.ref('scams/').once('value', snap => {
             let found = null;
             snap.forEach(c => { if(c.key === key) found = c.val(); });
             if(found) {
-                res.innerHTML = `<b style="color:var(--danger);">✖ SCAMMER DETECTED</b><br>Reason: ${found.detail}`;
+                res.innerHTML = `<b style="color:var(--danger);">✖ SCAMMER DETECTED</b><br>Detail: ${found.detail}`;
                 res.style.border = "1px solid var(--danger)";
             } else {
-                res.innerHTML = `<b style="color:var(--safe);">✔ CLEAR RECORD</b><br>No scam report found.`;
+                res.innerHTML = `<b style="color:var(--safe);">✔ CLEAR / NOT FOUND</b><br>Safe to trade.`;
                 res.style.border = "1px solid var(--safe)";
             }
         });
@@ -231,19 +224,20 @@
     function submitReport() {
         const t = document.getElementById('report-target').value;
         const d = document.getElementById('report-detail').value;
-        if(t && d) { db.ref('scams/' + t).set({ detail: d, by: currentPhone }); alert("Reported!"); }
+        if(t && d) {
+            db.ref('scams/' + t).set({ detail: d, by: currentPhone });
+            alert("Report submitted.");
+        }
     }
 
+    // Admin Functions
     function updateMarket() {
         const b = document.getElementById('adm-buy').value;
         const s = document.getElementById('adm-sell').value;
         const hr = new Date().getHours();
-        if(b && s) {
-            db.ref('market_rates/').set({ buy: b, sell: s, time: new Date().toLocaleTimeString() });
-            let k = hr < 12 ? 't10' : (hr < 15 ? 't13' : 't17');
-            db.ref('daily_records/' + today).update({ [k]: b });
-            alert("Market Updated!");
-        }
+        db.ref('market_rates/').set({ buy: b, sell: s, time: new Date().toLocaleTimeString() });
+        let key = hr < 12 ? 't10' : (hr < 15 ? 't13' : 't17');
+        db.ref('daily_records/' + today).update({ [key]: b });
     }
 
     function loadAdminData() {
@@ -252,7 +246,7 @@
             list.innerHTML = "<h5>Pending Access</h5>";
             snap.forEach(c => {
                 list.innerHTML += `<div class='card' style='font-size:11px;'>ID: ${c.key} (TX: ${c.val().tx}) 
-                <button onclick="approve('${c.key}')" style='background:var(--safe); padding:2px 5px; color:black;'>Approve</button></div>`;
+                <button onclick="approve('${c.key}')" style='background:var(--safe); width:auto; padding:2px 5px;'>Approve</button></div>`;
             });
         });
     }
@@ -261,22 +255,14 @@
     function logout() { localStorage.clear(); location.reload(); }
     function sendProof() {
         const tx = document.getElementById('tx-id').value;
-        if(tx) { db.ref('requests/' + currentPhone).set({ tx: tx }); alert("Submitted!"); }
+        if(tx) { db.ref('requests/' + currentPhone).set({ tx: tx }); alert("Proof sent!"); }
     }
     
     db.ref('settings/').on('value', s => { 
         const v = s.val(); 
-        document.getElementById('display-payno').innerText = v ? `KPay: ${v.kpay} \n Wave: ${v.wave}` : "Set in Admin Panel"; 
+        document.getElementById('display-payno').innerText = v ? `KPay: ${v.kpay} / Wave: ${v.wave}` : "09-xxxxxxxxx"; 
     });
-
-    function updatePhones() {
-        const k = document.getElementById('new-kpay').value;
-        const w = document.getElementById('new-wave').value;
-        if(k) db.ref('settings/kpay').set(k);
-        if(w) db.ref('settings/wave').set(w);
-        alert("Payment Updated!");
-    }
 </script>
 </body>
-    </html>
-    
+                        </html>
+                    
