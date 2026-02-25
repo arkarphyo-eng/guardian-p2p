@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guardian P2P - Free Market Rate</title>
+    <title>Guardian P2P - Professional</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
@@ -13,13 +13,18 @@
         header { width: 100%; padding: 15px; text-align: center; background: #000; border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 100; }
         .container { width: 92%; max-width: 450px; margin-top: 15px; }
         .card { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; }
-        h4 { margin: 0 0 10px 0; color: var(--gold); font-size: 13px; text-transform: uppercase; }
-        .price-display { font-size: 38px; font-weight: bold; color: var(--gold); text-align: center; margin: 5px 0; }
+        .price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .price-box { text-align: center; padding: 10px; border-radius: 8px; }
+        .buy { background: rgba(46, 204, 113, 0.1); border: 1px solid var(--safe); color: var(--safe); }
+        .sell { background: rgba(231, 76, 60, 0.1); border: 1px solid var(--danger); color: var(--danger); }
+        .price-val { font-size: 24px; font-weight: bold; display: block; }
         input { width: 90%; padding: 12px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #333; background: #000; color: white; }
         button { background: var(--gold); color: black; padding: 12px; border: none; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; }
-        .premium-lock { text-align: center; padding: 20px; border: 1px dashed #444; border-radius: 10px; background: #111; }
-        #payment-section { display: none; margin-top: 10px; padding: 15px; background: #1a1020; border: 1px solid var(--admin); border-radius: 10px; }
-        .list-item { background: #000; padding: 12px; margin-top: 10px; border-radius: 6px; border-left: 4px solid var(--danger); font-size: 12px; }
+        .admin-only { display: none; background: #1a1020; padding: 15px; border-radius: 12px; border: 1px solid var(--admin); margin-top: 20px; }
+        .request-item { background: #000; padding: 10px; border-radius: 6px; margin-bottom: 10px; border-left: 4px solid var(--gold); font-size: 12px; }
+        .btn-group { display: flex; gap: 5px; margin-top: 10px; }
+        .btn-approve { background: var(--safe); color: white; padding: 5px; font-size: 10px; }
+        .btn-cancel { background: var(--danger); color: white; padding: 5px; font-size: 10px; }
     </style>
 </head>
 <body>
@@ -30,59 +35,60 @@
 
 <div class="container">
     <div class="card">
-        <div style="text-align:center; font-size:11px; color:var(--safe);">LIVE MARKET RATE (FREE)</div>
-        <div id="display-price" class="price-display">Syncing...</div>
-        <div id="price-time" style="text-align:center; font-size:10px; color:#444;">Last update: --:--</div>
-    </div>
-
-    <div class="card">
-        <h4>Daily History</h4>
-        <div style="display:flex; justify-content:space-between; font-size:12px; color:#aaa;">
-            <div>10AM: <span id="p-10am" style="color:var(--gold);">--</span></div>
-            <div>1PM: <span id="p-1pm" style="color:var(--gold);">--</span></div>
-            <div>5PM: <span id="p-5pm" style="color:var(--gold);">--</span></div>
-        </div>
-    </div>
-
-    <div id="premium-features" style="display:none;">
-        <div class="card">
-            <h4>Verify Client ID</h4>
-            <input type="text" id="searchKey" placeholder="Phone or Account No.">
-            <button onclick="searchDB()">CHECK BLACKLIST</button>
-            <div id="searchResult" style="margin-top:10px; display:none; padding:10px; border-radius:5px;"></div>
-        </div>
-    </div>
-
-    <div id="activation-card" class="card premium-lock">
-        <div style="font-size:14px; color:var(--gold);">PREMIUM FEATURES 🔒</div>
-        <p style="font-size:11px; color:#777;">Blacklist စစ်ဆေးခြင်းများကို အသုံးပြုရန် Account Activation ပြုလုပ်ပါ။</p>
-        <button onclick="togglePayment()" style="font-size:12px; padding:8px;">GET ACCESS</button>
-
-        <div id="payment-section">
-            <p style="font-size:12px; color:#ccc; margin-bottom:10px;">ငွေလွှဲပြီးလျှင် Merchant ID နှင့် Transaction ID ပေးပို့ပါ။</p>
-            <div style="font-size:12px; background:#000; padding:10px; text-align:left; margin-bottom:10px; border:1px solid #333;">
-                KPay: <b id="display-kpay" style="color:var(--gold);">09-xxxxxxxxx</b><br>
-                Wave: <b id="display-wave" style="color:var(--gold);">09-xxxxxxxxx</b>
+        <h4 style="margin:0; font-size:12px; color:var(--gold); text-align:center;">LIVE MARKET RATE</h4>
+        <div class="price-grid">
+            <div class="price-box buy">
+                <span style="font-size:10px;">BUY (အဝယ်)</span>
+                <span id="buy-rate" class="price-val">0</span>
             </div>
-            <input type="text" id="pay-mid" placeholder="Desired Merchant ID">
-            <input type="text" id="pay-tx" placeholder="Transaction ID (Last 6 digits)">
-            <button onclick="requestAccess()" style="background:var(--admin); color:white;">SEND REQUEST</button>
+            <div class="price-box sell">
+                <span style="font-size:10px;">SELL (အရောင်း)</span>
+                <span id="sell-rate" class="price-val">0</span>
+            </div>
         </div>
+        <div id="price-time" style="text-align:center; font-size:10px; color:#444; margin-top:10px;">Update: --:--</div>
     </div>
 
-    <button onclick="loginAdmin()" style="background:transparent; color:#333; margin-top:30px; border:none; font-size:10px;">ADMIN LOGIN</button>
-    
-    <div id="admin-panel" class="card" style="display:none; border: 1px solid var(--admin);">
+    <div id="activation-card" class="card">
+        <h4 style="color:var(--gold);">PREMIUM ACCESS 🔒</h4>
+        <p style="font-size:11px; color:#777;">ငွေလွှဲပြီးလျှင် Merchant ID နှင့် Transaction ID ပေးပို့ပါ။</p>
+        <div style="font-size:12px; background:#000; padding:10px; margin-bottom:10px; border:1px solid #333;">
+            KPay: <b id="display-kpay" style="color:var(--gold);">09-xxxxxxxxx</b><br>
+            Wave: <b id="display-wave" style="color:var(--gold);">09-xxxxxxxxx</b>
+        </div>
+        <input type="text" id="pay-mid" placeholder="Phone Number (Login ID)">
+        <input type="password" id="pay-pass" placeholder="Set 6-Digit Password" maxlength="6">
+        <input type="text" id="pay-tx" placeholder="Transaction Last 6 digits">
+        <button onclick="requestAccess()">SEND PAYMENT PROOF</button>
+    </div>
+
+    <div id="login-section" class="card">
+        <h4 style="color:var(--gold);">LOGIN</h4>
+        <input type="text" id="login-phone" placeholder="Phone Number">
+        <input type="password" id="login-pass" placeholder="6-Digit Password" maxlength="6">
+        <button onclick="userLogin()">LOGIN TO SYSTEM</button>
+    </div>
+
+    <div id="admin-panel" class="admin-only">
         <h4 style="color:var(--admin);">ADMIN DASHBOARD</h4>
-        <input type="number" id="manual-price" placeholder="Set Price">
-        <button onclick="updatePrice()" style="background:var(--admin); color:white; margin-bottom:20px;">SET PRICE & LOG</button>
+        <div class="card">
+            <h5>Set Market Rates</h5>
+            <input type="number" id="m-buy" placeholder="Buy Rate">
+            <input type="number" id="m-sell" placeholder="Sell Rate">
+            <button onclick="updateRates()" style="background:var(--admin); color:white;">UPDATE RATES</button>
+        </div>
         
-        <h4 style="color:var(--admin); border-top:1px solid #333; padding-top:10px;">Update Payment Numbers</h4>
-        <input type="text" id="new-kpay" placeholder="New KPay Number">
-        <input type="text" id="new-wave" placeholder="New Wave Number">
-        <button onclick="updatePhones()" style="background:var(--admin); color:white;">UPDATE PHONES</button>
-        
-        <div id="pending-list" style="margin-top:15px; font-size:12px;"></div>
+        <div class="card">
+            <h5>Pending Approvals</h5>
+            <div id="pending-requests"></div>
+        </div>
+
+        <div class="card">
+            <h5>Payment Settings</h5>
+            <input type="text" id="new-kpay" placeholder="New KPay">
+            <input type="text" id="new-wave" placeholder="New Wave">
+            <button onclick="updatePhones()" style="background:var(--admin); color:white;">UPDATE PHONES</button>
+        </div>
     </div>
 </div>
 
@@ -99,113 +105,95 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let currentMID = localStorage.getItem('g_mid');
-    let isAdmin = false;
 
-    // ၁။ ငွေလွှဲဖုန်းနံပါတ်များကို Database မှ ဆွဲထုတ်ပြသခြင်း
-    db.ref('settings/').on('value', snap => {
-        const val = snap.val();
-        if(val) {
-            if(val.kpay) document.getElementById('display-kpay').innerText = val.kpay;
-            if(val.wave) document.getElementById('display-wave').innerText = val.wave;
-        }
+    // Rates Sync
+    db.ref('market_rates/').on('value', snap => {
+        const d = snap.val() || {buy: 0, sell: 0, time: '--'};
+        document.getElementById('buy-rate').innerText = parseInt(d.buy).toLocaleString();
+        document.getElementById('sell-rate').innerText = parseInt(d.sell).toLocaleString();
+        document.getElementById('price-time').innerText = "Update: " + d.time;
     });
 
-    // ၂။ Admin မှ ဖုန်းနံပါတ်ပြင်ဆင်ခြင်း
-    function updatePhones() {
-        const k = document.getElementById('new-kpay').value;
-        const w = document.getElementById('new-wave').value;
-        if(!isAdmin) return alert("Admin Login ဝင်ပါ။");
-        if(k) db.ref('settings/kpay').set(k);
-        if(w) db.ref('settings/wave').set(w);
-        alert("ဖုန်းနံပါတ်များ ပြောင်းလဲပြီးပါပြီ။");
+    // Payment Info Sync
+    db.ref('settings/').on('value', snap => {
+        const v = snap.val() || {};
+        if(v.kpay) document.getElementById('display-kpay').innerText = v.kpay;
+        if(v.wave) document.getElementById('display-wave').innerText = v.wave;
+    });
+
+    function requestAccess() {
+        const ph = document.getElementById('pay-mid').value;
+        const ps = document.getElementById('pay-pass').value;
+        const tx = document.getElementById('pay-tx').value;
+        if(ph && ps.length == 6 && tx) {
+            db.ref('requests/' + ph).set({ pass: ps, tx: tx, status: 'pending' });
+            alert("Payment Proof တင်ပြပြီးပါပြီ။ Admin အတည်ပြုချက် စောင့်ပါ။");
+        } else { alert("အချက်အလက် အပြည့်အစုံ ထည့်ပါ။"); }
     }
 
-    // ဈေးနှုန်း Sync လုပ်ခြင်း
-    db.ref('market_price/').on('value', snap => {
-        const val = snap.val();
-        if(val) {
-            document.getElementById('display-price').innerText = parseInt(val.rate).toLocaleString() + " MMK";
-            document.getElementById('price-time').innerText = "Update: " + val.time;
-        }
-    });
+    function userLogin() {
+        const ph = document.getElementById('login-phone').value;
+        const ps = document.getElementById('login-pass').value;
 
-    const today = new Date().toISOString().split('T')[0];
-    db.ref('daily_logs/' + today).on('value', snap => {
-        const d = snap.val() || {};
-        document.getElementById('p-10am').innerText = d.t10 ? parseInt(d.t10).toLocaleString() : "--";
-        document.getElementById('p-1pm').innerText = d.t13 ? parseInt(d.t13).toLocaleString() : "--";
-        document.getElementById('p-5pm').innerText = d.t17 ? parseInt(d.t17).toLocaleString() : "--";
-    });
-
-    function checkAccess() {
-        if(!currentMID) return;
-        db.ref('users/' + currentMID).on('value', snap => {
-            if(snap.val() && snap.val().active) {
-                document.getElementById('premium-features').style.display = 'block';
-                document.getElementById('activation-card').style.display = 'none';
+        // Admin Login
+        if(ph === "admin@gmail.com" && ps === "151015") {
+            const code = prompt("Enter 6-Digit Admin Code:");
+            if(code === "151015") {
+                document.getElementById('admin-panel').style.display = 'block';
+                loadRequests();
+                return;
             }
+        }
+
+        // User Login
+        db.ref('users/' + ph).once('value', snap => {
+            const u = snap.val();
+            if(u && u.pass === ps && u.active) { alert("Welcome to Premium!"); }
+            else { alert("အကောင့်မရှိပါ သို့မဟုတ် Activate မဖြစ်သေးပါ။"); }
         });
     }
 
-    function togglePayment() { document.getElementById('payment-section').style.display = 'block'; }
-
-    function requestAccess() {
-        const mid = document.getElementById('pay-mid').value;
-        const tx = document.getElementById('pay-tx').value;
-        if(mid && tx) {
-            db.ref('users/' + mid).set({ active: false, pending: true, tx: tx });
-            localStorage.setItem('g_mid', mid);
-            alert("Request ပို့ပြီးပါပြီ။ Admin အတည်ပြုချက်ကို စောင့်ပါ။");
-        }
-    }
-
-    function loginAdmin() {
-        if(prompt("Admin Password:") === "151015") {
-            isAdmin = true;
-            document.getElementById('admin-panel').style.display = 'block';
-            loadRequests();
+    function updateRates() {
+        const b = document.getElementById('m-buy').value;
+        const s = document.getElementById('m-sell').value;
+        if(b && s) {
+            db.ref('market_rates/').set({ buy: b, sell: s, time: new Date().toLocaleTimeString() });
+            alert("Rates Updated!");
         }
     }
 
     function loadRequests() {
-        db.ref('users/').on('value', snap => {
-            const list = document.getElementById('pending-list');
-            list.innerHTML = "<b>Pending Requests:</b>";
-            snap.forEach(c => {
-                if(c.val().pending) {
-                    list.innerHTML += `<div class='list-item'>ID: ${c.key} (TX: ${c.val().tx}) 
-                    <button onclick="approveUser('${c.key}')" style="background:var(--safe); width:auto; padding:2px 5px; font-size:10px;">APPROVE</button></div>`;
+        db.ref('requests/').on('value', snap => {
+            const container = document.getElementById('pending-requests');
+            container.innerHTML = "";
+            snap.forEach(child => {
+                if(child.val().status === 'pending') {
+                    container.innerHTML += `
+                        <div class="request-item">
+                            ID: ${child.key} | TX: ${child.val().tx}
+                            <div class="btn-group">
+                                <button class="btn-approve" onclick="action('${child.key}', 'approve', '${child.val().pass}')">APPROVE</button>
+                                <button class="btn-cancel" onclick="action('${child.key}', 'cancel')">CANCEL</button>
+                            </div>
+                        </div>`;
                 }
             });
         });
     }
 
-    function approveUser(id) { db.ref('users/' + id).update({ active: true, pending: false }); }
-
-    function updatePrice() {
-        const p = document.getElementById('manual-price').value;
-        if(!isAdmin || !p) return;
-        const now = new Date();
-        const hour = now.getHours();
-        db.ref('market_price/').set({ rate: p, time: now.toLocaleTimeString() });
-        let skey = hour < 12 ? 't10' : (hour < 15 ? 't13' : 't17');
-        db.ref('daily_logs/' + today).update({ [skey]: p });
-        alert("ဈေးနှုန်းပြင်ဆင်ပြီးပါပြီ။");
+    function action(id, type, pass) {
+        if(type === 'approve') {
+            db.ref('users/' + id).set({ pass: pass, active: true });
+            db.ref('requests/' + id).remove();
+        } else { db.ref('requests/' + id).remove(); }
     }
 
-    function searchDB() {
-        const key = document.getElementById('searchKey').value;
-        const res = document.getElementById('searchResult');
-        res.style.display = 'block'; res.innerHTML = "Searching...";
-        db.ref('incidents/').once('value', snap => {
-            let found = false;
-            snap.forEach(c => { if(c.val().target.includes(key)) { res.innerHTML = "✖ SCAMMER MATCH!"; res.style.color = "red"; found = true; } });
-            if(!found) { res.innerHTML = "✔ CLEAR"; res.style.color = "green"; }
-        });
+    function updatePhones() {
+        const k = document.getElementById('new-kpay').value;
+        const w = document.getElementById('new-wave').value;
+        if(k) db.ref('settings/kpay').set(k);
+        if(w) db.ref('settings/wave').set(w);
     }
-
-    checkAccess();
 </script>
 </body>
 </html>
